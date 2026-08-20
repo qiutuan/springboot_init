@@ -32,6 +32,23 @@ import java.util.Collections;
 @Slf4j
 public class RateLimitAspect {
 
+    private static final DefaultRedisScript<Long> RATE_LIMIT_SCRIPT = new DefaultRedisScript<>();
+
+    static {
+        RATE_LIMIT_SCRIPT.setScriptText(
+                "local current = redis.call('incr', KEYS[1]) " +
+                        "if current == 1 then " +
+                        "   redis.call('expire', KEYS[1], ARGV[1]) " +
+                        "end " +
+                        "if current <= tonumber(ARGV[2]) then " +
+                        "   return 1 " +
+                        "else " +
+                        "   return 0 " +
+                        "end"
+        );
+        RATE_LIMIT_SCRIPT.setResultType(Long.class);
+    }
+
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
@@ -68,16 +85,8 @@ public class RateLimitAspect {
     }
 
     private boolean tryAcquire(String key, int count, int time) {
-        String script = "local current = redis.call('incr', KEYS[1]) " +
-                "if current == 1 then " +
-                "   redis.call('expire', KEYS[1], ARGV[1]) " +
-                "end " +
-                "if current <= tonumber(ARGV[2]) then " +
-                "   return 1 " +
-                "else " +
-                "   return 0 " +
-                "end";
-        return Boolean.TRUE.equals(stringRedisTemplate.execute(new DefaultRedisScript<>(script, Boolean.class),
-                Collections.singletonList(key), String.valueOf(time), String.valueOf(count)));
+        Long result = stringRedisTemplate.execute(RATE_LIMIT_SCRIPT, Collections.singletonList(key),
+                String.valueOf(time), String.valueOf(count));
+        return Long.valueOf(1L).equals(result);
     }
 }
