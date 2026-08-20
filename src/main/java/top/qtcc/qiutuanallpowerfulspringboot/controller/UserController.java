@@ -160,7 +160,7 @@ public class UserController {
      */
     @SaCheckRole(UserConstant.ADMIN_ROLE)
     @PostMapping("/list/page")
-    public BaseResponse<Page<User>> listUserByPage(@RequestBody UserQueryRequest userQueryRequest) {
+    public BaseResponse<Page<User>> listUserByPage(@RequestBody @Valid UserQueryRequest userQueryRequest) {
         if (userQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -177,7 +177,7 @@ public class UserController {
      */
     @SaCheckLogin
     @PostMapping("/list/page/vo")
-    public BaseResponse<Page<UserVO>> listUserVOByPage(@RequestBody UserQueryRequest userQueryRequest) {
+    public BaseResponse<Page<UserVO>> listUserVOByPage(@RequestBody @Valid UserQueryRequest userQueryRequest) {
         if (userQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
