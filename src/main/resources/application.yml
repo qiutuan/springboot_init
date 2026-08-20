@@ -22,15 +22,17 @@ spring:
       max-request-size: 10MB
   # Spring AI Alibaba（DashScope / 通义千问），生产必须配置真实 DASHSCOPE_API_KEY
   ai:
-    dashscope:
-      api-key: ${DASHSCOPE_API_KEY:sk-xxx}
+    openai:
+      api-key: ${DASHSCOPE_API_KEY:}
       chat:
         options:
-          model: qwen-plus
+          model: ${AI_CHAT_MODEL:qwen3.7-plus}
           temperature: 0.7
       embedding:
         options:
-          model: text-embedding-v4
+          model: ${AI_EMBEDDING_MODEL:qwen3.7-text-embedding}
+      base-url: https://llm-5js5c5n8824f6iz4.cn-beijing.maas.aliyuncs.com/compatible-mode
+
 
 mybatis-plus:
   configuration:
