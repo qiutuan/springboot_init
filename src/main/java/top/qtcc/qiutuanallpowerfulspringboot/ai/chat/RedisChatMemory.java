@@ -43,27 +43,32 @@ public class RedisChatMemory implements ChatMemory {
     public List<Message> get(String conversationId) {
         String key = KEY_PREFIX + conversationId;
         try {
-            List<String> entries = redisTemplate.opsForList().range(key, 0, -1);
-            if (entries != null && !entries.isEmpty()) {
-                List<Message> messages = new ArrayList<>(entries.size());
-                for (String entry : entries) {
-                    messages.add(toMessage(objectMapper.readValue(entry, new TypeReference<Map<String, Object>>() {
-                    })));
+            DataType dataType = redisTemplate.type(key);
+            if (dataType == DataType.LIST) {
+                List<String> entries = redisTemplate.opsForList().range(key, 0, -1);
+                if (entries != null && !entries.isEmpty()) {
+                    List<Message> messages = new ArrayList<>(entries.size());
+                    for (String entry : entries) {
+                        messages.add(toMessage(objectMapper.readValue(entry, new TypeReference<Map<String, Object>>() {
+                        })));
+                    }
+                    return messages;
+                }
+            } else if (dataType == DataType.STRING) {
+                // 兼容旧版本 String 值（JSON 数组）存储
+                String json = redisTemplate.opsForValue().get(key);
+                if (json == null) {
+                    return List.of();
+                }
+                List<Map<String, Object>> list = objectMapper.readValue(json, new TypeReference<List<Map<String, Object>>>() {
+                });
+                List<Message> messages = new ArrayList<>(list.size());
+                for (Map<String, Object> map : list) {
+                    messages.add(toMessage(map));
                 }
                 return messages;
             }
-            // 兼容旧版本 String 值（JSON 数组）存储
-            String json = redisTemplate.opsForValue().get(key);
-            if (json == null) {
-                return List.of();
-            }
-            List<Map<String, Object>> list = objectMapper.readValue(json, new TypeReference<List<Map<String, Object>>>() {
-            });
-            List<Message> messages = new ArrayList<>(list.size());
-            for (Map<String, Object> map : list) {
-                messages.add(toMessage(map));
-            }
-            return messages;
+            return List.of();
         } catch (Exception e) {
             log.warn("读取聊天上下文失败, conversationId={}", conversationId, e);
             return List.of();
