@@ -28,7 +28,7 @@ public class LogInterceptor {
     /**
      * 执行拦截
      */
-    @Around("execution(* top.qtcc.qiutuanallpowerfulspringboot.controller.*.*(..))")
+    @Around("execution(* top.qtcc.qiutuanallpowerfulspringboot..controller..*.*(..))")
     public Object doInterceptor(ProceedingJoinPoint point) throws Throwable {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();

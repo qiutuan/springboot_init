@@ -36,7 +36,7 @@ public class RequestLogAspect {
     @Resource
     private RequestLogService requestLogService;
 
-    @Around("execution(* top.qtcc.qiutuanallpowerfulspringboot.controller.*.*(..))")
+    @Around("execution(* top.qtcc.qiutuanallpowerfulspringboot..controller..*.*(..))")
     public Object doAround(ProceedingJoinPoint joinPoint) throws Throwable {
         long startTime = System.currentTimeMillis();
         RequestLog requestLog = new RequestLog();
@@ -93,7 +93,8 @@ public class RequestLogAspect {
                     .toArray());
             return json.length() > 2000 ? json.substring(0, 2000) : json;
         } catch (Exception e) {
-            return null;
+            log.warn("请求参数序列化失败", e);
+            return "[]";
         }
     }
 }
