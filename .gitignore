@@ -4,6 +4,10 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+# 运行时产物
+logs/
+data/
+
 ### STS ###
 .apt_generated
 .classpath

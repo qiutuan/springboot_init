@@ -1,77 +1,103 @@
 server:
   port: 8800
-
+  servlet:
+    session:
+      cookie:
+        same-site: lax
 
 spring:
+  application:
+    name: qiutuan-all-powerful-springboot
   #  数据源配置
   datasource:
-    url: jdbc:mysql://localhost:3306/xxxxx?useSSL=false&serverTimezone=UTC&useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true
-    username: xxxxx
-    password: xxxxx
+    url: jdbc:mysql://localhost:3306/sp_init?useSSL=false&serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456789qt}
     driver-class-name: com.mysql.cj.jdbc.Driver
   # redis 配置
   redis:
-    # 地址
-    host: xxxxx
-    # 端口，默认为6379
-    port: 6379
-    # 数据库索引
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
     database: 0
-    # 密码
-    password:
-    # 连接超时时间
+    password: ${REDIS_PASSWORD:}
     timeout: 10s
     lettuce:
       pool:
-        # 连接池中的最小空闲连接
         min-idle: 0
-        # 连接池中的最大空闲连接
         max-idle: 8
-        # 连接池的最大数据库连接数
         max-active: 8
-        # #连接池最大阻塞等待时间（使用负值表示没有限制）
         max-wait: -1ms
-  #上传文件大小限制
+  # 上传文件大小限制（与 FileController 业务上限对齐）
   servlet:
     multipart:
-      max-file-size: 100MB
-      max-request-size: 100MB
-
+      max-file-size: 10MB
+      max-request-size: 10MB
+  # Spring AI Alibaba（DashScope / 通义千问）
+  ai:
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY:sk-xxx}
+      chat:
+        options:
+          model: qwen-plus
+          temperature: 0.7
+      embedding:
+        options:
+          model: text-embedding-v4
 
 mybatis-plus:
   configuration:
-    # 打印sql
+    # 开启驼峰命名映射
+    map-underscore-to-camel-case: true
+    # 生产环境请移除（避免打印 SQL）
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-    #关闭驼峰命名   如果开启驼峰命名请注释此配置
-    map-underscore-to-camel-case: false
   global-config:
     banner: false
+    db-config:
+      # 逻辑删除
+      logic-delete-field: isDelete
+      logic-delete-value: 1
+      logic-not-delete-value: 0
 
+# Sa-Token 配置
+sa-token:
+  token-name: satoken
+  timeout: 2592000          # token 有效期（秒），30 天
+  active-timeout: -1        # 最低活跃频率，-1 不检查
+  is-concurrent: true       # 允许同一账号多地登录
+  is-share: true            # 多人登录时共用一个 token
+  token-style: uuid
+  is-log: false
+  is-read-cookie: false     # 从 header 读取 token
+  is-read-header: true
+  is-write-header: true     # 登录后把 token 写入响应头
 
-  # TODO 腾讯云对象存储配置
+# 腾讯云对象存储配置（TODO 生产替换为环境变量）
 cos:
   client:
-    accessKey: xxx
-    secretKey: xxx
-    region: xxx
-    bucket: xxx
+    accessKey: ${COS_ACCESS_KEY:xxx}
+    secretKey: ${COS_SECRET_KEY:xxx}
+    region: ${COS_REGION:xxx}
+    bucket: ${COS_BUCKET:xxx}
 
-
-# TODO minio对象存储配置  自行部署minio服务
+# MinIO 对象存储配置（TODO 生产替换为环境变量）
 minio:
-  endpoint: xxxxxx
-  accessKey: xxxxxx
-  secretKey: xxxxxx
-  bucket: xxxxxxx
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  accessKey: ${MINIO_ACCESS_KEY:minioadmin}
+  secretKey: ${MINIO_SECRET_KEY:minioadmin}
+  bucket: ${MINIO_BUCKET:qiutuan}
 
-
-# TODO 选择使用的对象存储 默认使用minio
-# MinioManager  minio对象存储 需要自行部署
-# CosManager    腾讯云对象存储
+# 选择使用的对象存储：MinioManager | CosManager
 file:
-  manager: MinioManager
-  # manager: CosManager
+  manager: ${FILE_MANAGER:MinioManager}
 
+# 应用自定义配置
+app:
+  cors:
+    # 跨域白名单（逗号分隔，生产按域名收敛）
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173}
+  ai:
+    # RAG 知识库目录（相对工作目录，启动时自动加载 .md/.txt）
+    knowledge-path: ${AI_KNOWLEDGE_PATH:./data/knowledge}
 
 # 接口文档配置
 knife4j:
@@ -84,3 +110,4 @@ knife4j:
         api-rule: package
         api-rule-resources:
           - top.qtcc.qiutuanallpowerfulspringboot.controller
+          - top.qtcc.qiutuanallpowerfulspringboot.ai.controller

@@ -1,18 +1,8 @@
-/*
- Navicat Premium Data Transfer
-
- Source Server         : mysql
- Source Server Type    : MySQL
- Source Server Version : 80033
- Source Host           : localhost:3306
- Source Schema         : spinit
-
- Target Server Type    : MySQL
- Target Server Version : 80033
- File Encoding         : 65001
-
- Date: 27/04/2025 14:28:49
-*/
+-- ============================================================
+-- qiutuan-all-powerful-springboot 初始化脚本
+-- MySQL 8.0+ / utf8mb4
+-- 包含：用户表、请求日志表、RBAC 权限表（角色/权限/关联）+ 种子数据
+-- ============================================================
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
@@ -46,15 +36,103 @@ DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'id',
   `user_account` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '账号',
-  `user_password` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '密码',
+  `user_password` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '密码(BCrypt)',
   `user_name` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '用户昵称',
   `user_avatar` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '用户头像',
   `user_profile` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '用户简介',
-  `user_role` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'user' COMMENT '用户角色',
+  `user_role` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'user' COMMENT '用户角色（兼容保留，RBAC 以 sys_user_role 为准）',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `is_delete` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除',
-  PRIMARY KEY (`id`) USING BTREE
+  `is_delete` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除(逻辑删除)',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_user_account`(`user_account`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1857700903633555457 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Table structure for sys_role 角色表
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_role`;
+CREATE TABLE `sys_role`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `role_code` varchar(64) NOT NULL COMMENT '角色编码（Sa-Token 角色标识）',
+  `role_name` varchar(128) NOT NULL COMMENT '角色名称',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `is_delete` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除(逻辑删除)',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_role_code`(`role_code`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '角色表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Table structure for sys_permission 权限表
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_permission`;
+CREATE TABLE `sys_permission`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `permission_code` varchar(128) NOT NULL COMMENT '权限编码（如 user:list）',
+  `permission_name` varchar(128) NOT NULL COMMENT '权限名称',
+  `parent_id` bigint NULL DEFAULT NULL COMMENT '父权限ID',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `is_delete` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除(逻辑删除)',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_permission_code`(`permission_code`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '权限表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Table structure for sys_user_role 用户角色关联表
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_user_role`;
+CREATE TABLE `sys_user_role`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `role_id` bigint NOT NULL COMMENT '角色ID',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_user_role`(`user_id`, `role_id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户角色关联表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Table structure for sys_role_permission 角色权限关联表
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_role_permission`;
+CREATE TABLE `sys_role_permission`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `role_id` bigint NOT NULL COMMENT '角色ID',
+  `permission_id` bigint NOT NULL COMMENT '权限ID',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_role_permission`(`role_id`, `permission_id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '角色权限关联表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- 种子数据
+-- ----------------------------
+
+-- 角色
+INSERT INTO `sys_role` (`role_code`, `role_name`) VALUES
+('admin', '管理员'),
+('user', '普通用户'),
+('ban', '封禁用户');
+
+-- 权限
+INSERT INTO `sys_permission` (`permission_code`, `permission_name`, `parent_id`) VALUES
+('user:list', '用户列表', NULL),
+('user:add', '新增用户', NULL),
+('user:update', '更新用户', NULL),
+('user:delete', '删除用户', NULL),
+('user:get', '查看用户', NULL);
+
+-- 管理员拥有全部权限
+INSERT INTO `sys_role_permission` (`role_id`, `permission_id`)
+SELECT r.id, p.id FROM `sys_role` r, `sys_permission` p WHERE r.role_code = 'admin';
+
+-- 将现有 user 表的角色同步到 RBAC 关联表
+INSERT INTO `sys_user_role` (`user_id`, `role_id`)
+SELECT u.id, r.id FROM `user` u, `sys_role` r WHERE u.user_role = 'admin' AND r.role_code = 'admin';
+INSERT INTO `sys_user_role` (`user_id`, `role_id`)
+SELECT u.id, r.id FROM `user` u, `sys_role` r WHERE u.user_role = 'user' AND r.role_code = 'user';
+INSERT INTO `sys_user_role` (`user_id`, `role_id`)
+SELECT u.id, r.id FROM `user` u, `sys_role` r WHERE u.user_role = 'ban' AND r.role_code = 'ban';
 
 SET FOREIGN_KEY_CHECKS = 1;
