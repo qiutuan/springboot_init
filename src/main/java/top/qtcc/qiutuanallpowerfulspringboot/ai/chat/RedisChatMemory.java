@@ -8,12 +8,12 @@ import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.data.redis.connection.DataType;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,16 +41,27 @@ public class RedisChatMemory implements ChatMemory {
 
     @Override
     public List<Message> get(String conversationId) {
-        String json = redisTemplate.opsForValue().get(KEY_PREFIX + conversationId);
-        if (json == null) {
-            return List.of();
-        }
+        String key = KEY_PREFIX + conversationId;
         try {
+            List<String> entries = redisTemplate.opsForList().range(key, 0, -1);
+            if (entries != null && !entries.isEmpty()) {
+                List<Message> messages = new ArrayList<>(entries.size());
+                for (String entry : entries) {
+                    messages.add(toMessage(objectMapper.readValue(entry, new TypeReference<Map<String, Object>>() {
+                    })));
+                }
+                return messages;
+            }
+            // 兼容旧版本 String 值（JSON 数组）存储
+            String json = redisTemplate.opsForValue().get(key);
+            if (json == null) {
+                return List.of();
+            }
             List<Map<String, Object>> list = objectMapper.readValue(json, new TypeReference<List<Map<String, Object>>>() {
             });
             List<Message> messages = new ArrayList<>(list.size());
-            for (Map<String, Object> m : list) {
-                messages.add(toMessage(m));
+            for (Map<String, Object> map : list) {
+                messages.add(toMessage(map));
             }
             return messages;
         } catch (Exception e) {
@@ -62,27 +73,24 @@ public class RedisChatMemory implements ChatMemory {
     @Override
     public void add(String conversationId, List<Message> messages) {
         String key = KEY_PREFIX + conversationId;
-        List<Map<String, Object>> existing = new ArrayList<>();
-        String json = redisTemplate.opsForValue().get(key);
-        if (json != null) {
-            try {
-                existing = objectMapper.readValue(json, new TypeReference<List<Map<String, Object>>>() {
-                });
-            } catch (Exception e) {
-                log.warn("解析聊天上下文失败，重置会话, conversationId={}", conversationId, e);
-                existing = new ArrayList<>();
-            }
-        }
-        for (Message message : messages) {
-            existing.add(toMap(message));
-        }
-        if (existing.size() > MAX_MESSAGES) {
-            existing = new ArrayList<>(existing.subList(existing.size() - MAX_MESSAGES, existing.size()));
+        if (messages == null || messages.isEmpty()) {
+            return;
         }
         try {
-            redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(existing), TTL);
+            DataType dataType = redisTemplate.type(key);
+            if (dataType != null && dataType != DataType.NONE && dataType != DataType.LIST) {
+                redisTemplate.delete(key);
+            }
+            List<String> payloads = new ArrayList<>(messages.size());
+            for (Message message : messages) {
+                payloads.add(objectMapper.writeValueAsString(toMap(message)));
+            }
+            redisTemplate.opsForList().rightPushAll(key, payloads);
+            redisTemplate.opsForList().trim(key, -MAX_MESSAGES, -1);
+            redisTemplate.expire(key, TTL);
         } catch (Exception e) {
             log.error("保存聊天上下文失败, conversationId={}", conversationId, e);
+            throw new IllegalStateException("保存聊天上下文失败", e);
         }
     }
 
@@ -92,10 +100,10 @@ public class RedisChatMemory implements ChatMemory {
     }
 
     private Map<String, Object> toMap(Message message) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("role", message.getMessageType().getValue());
-        map.put("content", message.getText());
-        return map;
+        return Map.of(
+                "role", message.getMessageType().getValue(),
+                "content", message.getText()
+        );
     }
 
     private Message toMessage(Map<String, Object> map) {
