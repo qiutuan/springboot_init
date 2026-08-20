@@ -29,11 +29,7 @@ public class RequestLogServiceImpl extends ServiceImpl<RequestLogMapper, Request
     @Async("asyncExecutor")
     @Override
     public void asyncSave(RequestLog requestLog) {
-        try {
-            this.save(requestLog);
-        } catch (Exception e) {
-            log.error("保存请求日志失败", e);
-        }
+        this.save(requestLog);
     }
 
     /**
@@ -42,12 +38,8 @@ public class RequestLogServiceImpl extends ServiceImpl<RequestLogMapper, Request
     @Scheduled(cron = "0 0 2 * * ?")
     @Override
     public void cleanExpiredLogs() {
-        try {
-            LocalDateTime expireTime = LocalDateTime.now().minusDays(DAY);
-            this.baseMapper.deleteExpiredLogs(expireTime);
-            log.info("清理{}天前的请求日志成功", DAY);
-        } catch (Exception e) {
-            log.error("清理请求日志失败", e);
-        }
+        LocalDateTime expireTime = LocalDateTime.now().minusDays(DAY);
+        this.baseMapper.deleteExpiredLogs(expireTime);
+        log.info("清理{}天前的请求日志成功", DAY);
     }
 }
