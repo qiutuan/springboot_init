@@ -23,7 +23,7 @@ spring:
   # Spring AI Alibaba（DashScope / 通义千问），生产必须配置真实 DASHSCOPE_API_KEY
   ai:
     openai:
-      api-key: ${DASHSCOPE_API_KEY:}
+      api-key: ${DASHSCOPE_API_KEY:sk-ws-H.EHXYPER.czSg.MEQCIDjb16KTH0cA3eWd_jAD8BGSFdVCCMB-qzUkI_kb7fHxAiB-bx6-epkiH3Ai2ydeP3FI1gE4JePJsLPJP63vIJ2Hrg}
       chat:
         options:
           model: ${AI_CHAT_MODEL:qwen3.7-plus}
@@ -64,6 +64,9 @@ app:
   ai:
     # RAG 知识库目录（相对工作目录，启动时自动加载 .md/.txt）
     knowledge-path: ${AI_KNOWLEDGE_PATH:./data/knowledge}
+  rag:
+    prompt-template: "Context information is below. Please answer the user's question based strictly on this context. Do not make up any information or use prior knowledge outside of the context. If the context does not contain the answer, reply honestly that you do not know or the knowledge base has no related content.\n---------------------\n{question_answer_context}\n---------------------\nUser's Question: {query}"
+    empty-context-template: "抱歉，根据知识库内容，没有找到与“{query}”相关的信息。"
 
 # 接口文档配置
 knife4j:

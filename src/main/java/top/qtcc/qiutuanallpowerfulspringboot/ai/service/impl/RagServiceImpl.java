@@ -9,6 +9,9 @@ import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
+import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugmenter;
+import org.springframework.beans.factory.annotation.Value;
 import top.qtcc.qiutuanallpowerfulspringboot.ai.advisor.LoggingAdvisor;
 import top.qtcc.qiutuanallpowerfulspringboot.ai.advisor.PromptInjectionProtectionAdvisor;
 import top.qtcc.qiutuanallpowerfulspringboot.ai.service.RagService;
@@ -28,7 +31,9 @@ public class RagServiceImpl implements RagService {
     private final VectorStore vectorStore;
     private final ChatClient ragChatClient;
 
-    public RagServiceImpl(VectorStore vectorStore, ChatModel chatModel) {
+    public RagServiceImpl(VectorStore vectorStore, ChatModel chatModel,
+                          @Value("${app.rag.prompt-template}") String promptTemplateStr,
+                          @Value("${app.rag.empty-context-template}") String emptyContextTemplateStr) {
         this.vectorStore = vectorStore;
         DocumentRetriever retriever = VectorStoreDocumentRetriever.builder()
                 .vectorStore(vectorStore)
@@ -37,6 +42,11 @@ public class RagServiceImpl implements RagService {
                 .build();
         RetrievalAugmentationAdvisor ragAdvisor = RetrievalAugmentationAdvisor.builder()
                 .documentRetriever(retriever)
+                .queryAugmenter(ContextualQueryAugmenter.builder()
+                        .allowEmptyContext(true)
+                        .promptTemplate(new PromptTemplate(promptTemplateStr))
+                        .emptyContextPromptTemplate(new PromptTemplate(emptyContextTemplateStr))
+                        .build())
                 .build();
         this.ragChatClient = ChatClient.builder(chatModel)
                 .defaultAdvisors(
