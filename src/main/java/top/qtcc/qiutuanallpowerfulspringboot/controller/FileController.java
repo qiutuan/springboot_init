@@ -3,6 +3,7 @@ package top.qtcc.qiutuanallpowerfulspringboot.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.hutool.core.io.FileUtil;
 import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -48,7 +49,10 @@ public class FileController {
     @SaCheckLogin
     @PostMapping("/upload")
     public BaseResponse<String> uploadFile(@RequestPart("file") MultipartFile multipartFile,
-                                           UploadFileRequest uploadFileRequest) {
+                                           @Valid UploadFileRequest uploadFileRequest) {
+        if (uploadFileRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "上传参数不能为空");
+        }
         String biz = uploadFileRequest.getBiz();
         FileUploadBizEnum fileUploadBizEnum = FileUploadBizEnum.getEnumByValue(biz);
         if (fileUploadBizEnum == null) {
@@ -97,6 +101,9 @@ public class FileController {
      * 校验文件大小与后缀
      */
     private void validFile(MultipartFile multipartFile, FileUploadBizEnum fileUploadBizEnum) {
+        if (multipartFile == null || multipartFile.isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件不能为空");
+        }
         long fileSize = multipartFile.getSize();
         String fileSuffix = FileUtil.getSuffix(StringUtils.defaultString(multipartFile.getOriginalFilename(), ""))
                 .toLowerCase(Locale.ROOT);
