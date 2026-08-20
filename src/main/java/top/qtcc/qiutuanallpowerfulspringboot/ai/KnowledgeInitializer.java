@@ -6,12 +6,12 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,7 +19,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * 知识库初始化：启动时从目录（默认 ./data/knowledge，不存在则回退 classpath:/knowledge）
@@ -56,7 +55,10 @@ public class KnowledgeInitializer implements ApplicationRunner {
             }
             int totalChunks = 0;
             for (Resource resource : resources) {
-                String text = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+                String text;
+                try (InputStream inputStream = resource.getInputStream()) {
+                    text = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+                }
                 String source = resource.getFilename();
                 List<Document> chunks = splitText(text, source);
                 vectorStore.add(chunks);
@@ -82,13 +84,12 @@ public class KnowledgeInitializer implements ApplicationRunner {
             }
             return resources;
         }
-        ClassPathResource classPathResource = new ClassPathResource("knowledge");
-        if (classPathResource.exists() && classPathResource.getFile().isDirectory()) {
-            File[] files = Objects.requireNonNull(classPathResource.getFile().listFiles());
-            for (File file : files) {
-                if (isTextFile(file.getName())) {
-                    resources.add(new FileSystemResource(file));
-                }
+        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+        Resource[] classpathResources = resolver.getResources("classpath*:knowledge/*");
+        for (Resource resource : classpathResources) {
+            String filename = resource.getFilename();
+            if (filename != null && isTextFile(filename)) {
+                resources.add(resource);
             }
         }
         return resources;
