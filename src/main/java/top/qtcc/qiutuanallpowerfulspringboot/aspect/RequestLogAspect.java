@@ -52,10 +52,14 @@ public class RequestLogAspect {
             requestLog.setMethod(request.getMethod());
             requestLog.setIp(NetUtils.getIpAddress(request));
             requestLog.setParams(serializeArgs(joinPoint.getArgs()));
-        }
-        Object loginId = StpUtil.getLoginIdDefaultNull();
-        if (loginId != null) {
-            requestLog.setUserId(Long.valueOf(loginId.toString()));
+            try {
+                Object loginId = StpUtil.getLoginIdDefaultNull();
+                if (loginId != null) {
+                    requestLog.setUserId(Long.valueOf(loginId.toString()));
+                }
+            } catch (Exception e) {
+                // 忽略非 Web 请求或测试环境下未初始化 SaTokenContext 的异常
+            }
         }
 
         Object result;
