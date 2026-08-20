@@ -42,7 +42,14 @@ public class WebSocketServer {
     @OnOpen
     public void onOpen(Session session, @PathParam("key") String key) {
         this.key = key;
-        SESSION_POOL.put(key, session);
+        Session oldSession = SESSION_POOL.put(key, session);
+        if (oldSession != null && oldSession.isOpen() && oldSession != session) {
+            try {
+                oldSession.close();
+            } catch (Exception e) {
+                log.warn("【websocket】关闭旧连接失败 key={}", key, e);
+            }
+        }
         log.info("【websocket】新连接 key={}, 当前在线: {}", key, SESSION_POOL.size());
     }
 
@@ -50,8 +57,8 @@ public class WebSocketServer {
      * 链接关闭
      */
     @OnClose
-    public void onClose() {
-        SESSION_POOL.remove(this.key, SESSION_POOL.get(this.key));
+    public void onClose(Session session) {
+        SESSION_POOL.remove(this.key, session);
         log.info("【websocket】连接断开 key={}, 当前在线: {}", this.key, SESSION_POOL.size());
     }
 
