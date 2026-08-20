@@ -47,9 +47,9 @@ minio:
   secretKey: ${MINIO_SECRET_KEY:minioadmin}
   bucket: ${MINIO_BUCKET:qiutuan}
 
-# 选择使用的对象存储：MinioManager | CosManager
+# 选择使用的存储：LocalFileManager | MinioManager | CosManager
 file:
-  manager: ${FILE_MANAGER:MinioManager}
+  manager: ${FILE_MANAGER:LocalFileManager}
 
 app:
   cors:

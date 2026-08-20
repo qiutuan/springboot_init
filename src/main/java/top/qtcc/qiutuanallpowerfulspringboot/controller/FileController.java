@@ -3,17 +3,21 @@ package top.qtcc.qiutuanallpowerfulspringboot.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.hutool.core.io.FileUtil;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import top.qtcc.qiutuanallpowerfulspringboot.common.BaseResponse;
 import top.qtcc.qiutuanallpowerfulspringboot.common.ResultUtils;
 import top.qtcc.qiutuanallpowerfulspringboot.domain.dto.file.UploadFileRequest;
+import top.qtcc.qiutuanallpowerfulspringboot.constant.UserConstant;
 import top.qtcc.qiutuanallpowerfulspringboot.domain.entity.User;
 import top.qtcc.qiutuanallpowerfulspringboot.domain.enums.ErrorCode;
 import top.qtcc.qiutuanallpowerfulspringboot.domain.enums.FileUploadBizEnum;
@@ -115,5 +119,59 @@ public class FileController {
         if (!fileUploadBizEnum.getSuffixWhitelist().contains(fileSuffix)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件类型错误");
         }
+    }
+
+    /**
+     * 文件读取 / 下载（流式读取本地或云存储文件对象）
+     */
+    @GetMapping("/download")
+    public void downloadFile(@RequestParam("key") String key, HttpServletResponse response) {
+        if (StringUtils.isBlank(key)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数不能为空");
+        }
+        try (InputStream inputStream = fileManager.getObject(key);
+             java.io.OutputStream outputStream = response.getOutputStream()) {
+            String fileSuffix = FileUtil.getSuffix(key).toLowerCase(Locale.ROOT);
+            String contentType = switch (fileSuffix) {
+                case "jpg", "jpeg" -> "image/jpeg";
+                case "png" -> "image/png";
+                case "gif" -> "image/gif";
+                case "webp" -> "image/webp";
+                case "svg" -> "image/svg+xml";
+                case "pdf" -> "application/pdf";
+                default -> "application/octet-stream";
+            };
+            response.setContentType(contentType);
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+            outputStream.flush();
+        } catch (Exception e) {
+            log.error("file download error, key = {}", key, e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "读取或下载文件失败");
+        }
+    }
+
+    /**
+     * 删除文件
+     */
+    @SaCheckLogin
+    @PostMapping("/delete")
+    public BaseResponse<Boolean> deleteFile(@RequestParam("key") String key) {
+        if (StringUtils.isBlank(key)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数不能为空");
+        }
+        User loginUser = userService.getLoginUser();
+        String[] parts = key.replace("\\", "/").split("/");
+        if (parts.length >= 3) {
+            String pathUserId = parts[2];
+            if (!UserConstant.ADMIN_ROLE.equals(loginUser.getUserRole()) && !String.valueOf(loginUser.getId()).equals(pathUserId)) {
+                throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权删除他人文件");
+            }
+        }
+        fileManager.deleteObject(key);
+        return ResultUtils.success(true);
     }
 }

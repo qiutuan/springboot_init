@@ -22,14 +22,18 @@ public class FileManagerProxy {
 
     @Bean
     public FileManager fileManager(@Qualifier("CosManager") FileManager cosManager,
-                                   @Qualifier("MinioManager") FileManager minioManager) {
+                                   @Qualifier("MinioManager") FileManager minioManager,
+                                   @Qualifier("LocalFileManager") FileManager localFileManager) {
         if ("CosManager".equals(fileManagerClassName)) {
             return cosManager;
         }
         if ("MinioManager".equals(fileManagerClassName)) {
             return minioManager;
         }
-        log.warn("未知的 file.manager={}，默认使用 MinioManager", fileManagerClassName);
-        return minioManager;
+        if ("LocalFileManager".equals(fileManagerClassName)) {
+            return localFileManager;
+        }
+        log.warn("未知的 file.manager={}，默认使用 LocalFileManager", fileManagerClassName);
+        return localFileManager;
     }
 }

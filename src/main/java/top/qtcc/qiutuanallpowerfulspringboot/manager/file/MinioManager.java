@@ -47,6 +47,32 @@ public class MinioManager implements FileManager {
         }
     }
 
+    @Override
+    public InputStream getObject(String key) {
+        try {
+            return minioClient.getObject(io.minio.GetObjectArgs.builder()
+                    .bucket(minioClientConfig.getBucket())
+                    .object(key)
+                    .build());
+        } catch (Exception e) {
+            log.error("获取 MinIO 对象失败, key={}", key, e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "读取文件失败");
+        }
+    }
+
+    @Override
+    public void deleteObject(String key) {
+        try {
+            minioClient.removeObject(io.minio.RemoveObjectArgs.builder()
+                    .bucket(minioClientConfig.getBucket())
+                    .object(key)
+                    .build());
+        } catch (Exception e) {
+            log.error("删除 MinIO 对象失败, key={}", key, e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "删除文件失败");
+        }
+    }
+
     /**
      * 生成 MinIO 访问地址（endpoint/bucket/key）
      */

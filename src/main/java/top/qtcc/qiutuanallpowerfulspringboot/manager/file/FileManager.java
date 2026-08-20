@@ -20,6 +20,21 @@ public interface FileManager {
     void putObject(String key, InputStream inputStream, long contentLength, String contentType);
 
     /**
+     * 读取对象（流式读取）
+     *
+     * @param key 对象键
+     * @return 文件流
+     */
+    InputStream getObject(String key);
+
+    /**
+     * 删除对象
+     *
+     * @param key 对象键
+     */
+    void deleteObject(String key);
+
+    /**
      * 生成可访问地址
      *
      * @param key 对象键
