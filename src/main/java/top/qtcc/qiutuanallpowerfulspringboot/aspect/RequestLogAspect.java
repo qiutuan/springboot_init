@@ -94,7 +94,7 @@ public class RequestLogAspect {
             return json.length() > 2000 ? json.substring(0, 2000) : json;
         } catch (Exception e) {
             log.warn("请求参数序列化失败", e);
-            return "[]";
+            return "序列化失败: " + e.getMessage();
         }
     }
 }
