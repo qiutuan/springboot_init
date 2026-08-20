@@ -17,17 +17,23 @@ import java.util.stream.Collectors;
 public enum FileUploadBizEnum {
 // 文件上传业务类型枚举
 
-    USER_AVATAR("用户头像", "user_avatar"),
-    USER_FILE("用户文件", "user_file"),
-    USER_IMAGE("用户图片", "user_image");
+    USER_AVATAR("用户头像", "user_avatar", 1024 * 1024L, Arrays.asList("jpeg", "jpg", "svg", "png", "webp")),
+    USER_FILE("用户文件", "user_file", 10 * 1024 * 1024L, Arrays.asList("pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt")),
+    USER_IMAGE("用户图片", "user_image", 5 * 1024 * 1024L, Arrays.asList("jpeg", "jpg", "svg", "png", "webp"));
 
     private final String text;
 
     private final String value;
 
-    FileUploadBizEnum(String text, String value) {
+    private final long maxSize;
+
+    private final List<String> suffixWhitelist;
+
+    FileUploadBizEnum(String text, String value, long maxSize, List<String> suffixWhitelist) {
         this.text = text;
         this.value = value;
+        this.maxSize = maxSize;
+        this.suffixWhitelist = suffixWhitelist;
     }
 
     /**
