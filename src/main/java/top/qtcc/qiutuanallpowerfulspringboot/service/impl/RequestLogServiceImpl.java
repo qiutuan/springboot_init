@@ -25,8 +25,6 @@ public class RequestLogServiceImpl extends ServiceImpl<RequestLogMapper, Request
 
     /**
      * 异步保存请求日志
-     *
-     * @param requestLog 请求日志
      */
     @Async("asyncExecutor")
     @Override
@@ -52,4 +50,4 @@ public class RequestLogServiceImpl extends ServiceImpl<RequestLogMapper, Request
             log.error("清理请求日志失败", e);
         }
     }
-} 
+}

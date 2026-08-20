@@ -3,7 +3,6 @@ package top.qtcc.qiutuanallpowerfulspringboot.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import top.qtcc.qiutuanallpowerfulspringboot.domain.entity.User;
 
-
 /**
  * 用户数据库操作
  *
@@ -11,9 +10,4 @@ import top.qtcc.qiutuanallpowerfulspringboot.domain.entity.User;
  * @date 2024/11/02
  */
 public interface UserMapper extends BaseMapper<User> {
-
 }
-
-
-
-

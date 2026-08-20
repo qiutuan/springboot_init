@@ -1,25 +1,31 @@
 package top.qtcc.qiutuanallpowerfulspringboot.manager.file;
 
-import java.io.File;
+import java.io.InputStream;
 
 /**
+ * 对象存储管理器抽象
+ *
  * @author qiutuan
  */
 public interface FileManager {
 
     /**
-     *  上传对象
+     * 流式上传对象
      *
-     * @param key 文件名
-     * @param localFilePath 本地文件路径
+     * @param key           对象键
+     * @param inputStream   文件流
+     * @param contentLength 内容长度
+     * @param contentType   内容类型
      */
-    public void putObject(String key, String localFilePath);
+    void putObject(String key, InputStream inputStream, long contentLength, String contentType);
 
     /**
-     *  上传对象
+     * 生成可访问地址
      *
-     * @param key 文件名
-     * @param file 文件
+     * @param key 对象键
+     * @return 访问 URL
      */
-    public void putObject(String key, File file);
+    default String getFileUrl(String key) {
+        return key;
+    }
 }

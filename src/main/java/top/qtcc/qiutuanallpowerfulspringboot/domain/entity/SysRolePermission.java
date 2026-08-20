@@ -5,28 +5,26 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 请求日志
+ * 角色-权限关联（RBAC）
  *
  * @author qiutuan
- * @date 2024/12/10
  */
 @Data
-@TableName("request_log")
-public class RequestLog {
+@TableName("sys_role_permission")
+public class SysRolePermission implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @TableId(type = IdType.AUTO)
     private Long id;
-    private String requestId;
-    private String url;
-    private String method;
-    private String params;
-    private String ip;
-    private Long userId;
-    private Integer status;
-    private String errorMsg;
-    private Long costTime;
+
+    private Long roleId;
+
+    private Long permissionId;
+
     private LocalDateTime createTime;
 }

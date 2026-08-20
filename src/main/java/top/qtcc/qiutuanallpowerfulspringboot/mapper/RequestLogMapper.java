@@ -2,7 +2,6 @@ package top.qtcc.qiutuanallpowerfulspringboot.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Mapper;
 import top.qtcc.qiutuanallpowerfulspringboot.domain.entity.RequestLog;
 
 import java.time.LocalDateTime;
@@ -13,7 +12,6 @@ import java.time.LocalDateTime;
  * @author qiutuan
  * @date 2024/12/07
  */
-@Mapper
 public interface RequestLogMapper extends BaseMapper<RequestLog> {
 
     /**
@@ -23,4 +21,4 @@ public interface RequestLogMapper extends BaseMapper<RequestLog> {
      */
     @Delete("DELETE FROM request_log WHERE create_time < #{expireTime}")
     void deleteExpiredLogs(LocalDateTime expireTime);
-} 
+}

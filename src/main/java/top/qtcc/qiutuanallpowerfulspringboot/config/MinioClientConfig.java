@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- *  Minio 客户端配置
+ * Minio 客户端配置
  *
  * @author qiutuan
  * @date 2024/11/19
@@ -24,7 +24,6 @@ public class MinioClientConfig {
     private String secretKey;
 
     private String bucket;
-
 
     @Bean
     public MinioClient minioClient() {

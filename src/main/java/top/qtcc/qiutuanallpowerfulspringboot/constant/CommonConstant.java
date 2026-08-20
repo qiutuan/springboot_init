@@ -16,6 +16,10 @@ public interface CommonConstant {
     /**
      * 降序
      */
-    String SORT_ORDER_DESC = " descend";
-    
+    String SORT_ORDER_DESC = "descend";
+
+    /**
+     * 分页大小上限
+     */
+    long MAX_PAGE_SIZE = 100;
 }

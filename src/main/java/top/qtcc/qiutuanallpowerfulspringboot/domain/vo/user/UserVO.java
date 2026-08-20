@@ -3,7 +3,7 @@ package top.qtcc.qiutuanallpowerfulspringboot.domain.vo.user;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 /**
  * 用户视图（脱敏）
@@ -14,35 +14,17 @@ import java.util.Date;
 @Data
 public class UserVO implements Serializable {
 
-    /**
-     * id
-     */
+    private static final long serialVersionUID = 1L;
+
     private Long id;
 
-    /**
-     * 用户昵称
-     */
     private String userName;
 
-    /**
-     * 用户头像
-     */
     private String userAvatar;
 
-    /**
-     * 用户简介
-     */
     private String userProfile;
 
-    /**
-     * 用户角色
-     */
     private String userRole;
 
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
-    private static final long serialVersionUID = 1L;
+    private LocalDateTime createTime;
 }

@@ -1,21 +1,22 @@
 package top.qtcc.qiutuanallpowerfulspringboot.domain.entity;
 
-import lombok.AllArgsConstructor;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 /**
- *  用户实体类
+ * 用户实体类
  *
  * @author qiutuan
  * @date 2024/12/10
  */
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
+@TableName("user")
 public class User implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -23,6 +24,7 @@ public class User implements Serializable {
     /**
      * 用户ID，主键，自增
      */
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
@@ -31,22 +33,19 @@ public class User implements Serializable {
     private String userAccount;
 
     /**
-     * 用户密码
+     * 用户密码（BCrypt 密文）
      */
     private String userPassword;
-
 
     /**
      * 用户昵称
      */
     private String userName;
 
-
     /**
      * 用户头像
      */
     private String userAvatar;
-
 
     /**
      * 用户简介
@@ -54,30 +53,24 @@ public class User implements Serializable {
     private String userProfile;
 
     /**
-     * 用户角色，默认为 'user'
-     * 默认值为 'user'，表示普通用户
+     * 用户角色，兼容保留（RBAC 权限以 sys_user_role 关联表为准）
      */
     private String userRole;
 
+    /**
+     * 创建时间
+     */
+    private LocalDateTime createTime;
 
     /**
-     * 创建时间，默认值为当前时间戳
-     * 记录用户创建的时间
+     * 更新时间
      */
-    private Timestamp createTime;
-
+    private LocalDateTime updateTime;
 
     /**
-     * 更新时间，每次更新记录时自动更新为当前时间戳
-     * 记录用户最后更新的时间
+     * 逻辑删除：0 未删除，1 已删除
      */
-    private Timestamp updateTime;
-
-
-    /**
-     * 是否删除，0表示未删除，非0表示已删除
-     * 用于逻辑删除，0表示未删除，1或其他值表示已删除
-     */
-    private Byte isDelete;
+    @TableLogic
+    private Integer isDelete;
 
 }

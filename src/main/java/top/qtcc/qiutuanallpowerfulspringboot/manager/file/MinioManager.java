@@ -1,18 +1,19 @@
 package top.qtcc.qiutuanallpowerfulspringboot.manager.file;
 
-import cn.hutool.core.io.FileUtil;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
-import io.minio.RemoveObjectArgs;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import top.qtcc.qiutuanallpowerfulspringboot.config.MinioClientConfig;
+import top.qtcc.qiutuanallpowerfulspringboot.domain.enums.ErrorCode;
+import top.qtcc.qiutuanallpowerfulspringboot.exception.BusinessException;
 
-import javax.annotation.Resource;
-import java.io.File;
+import jakarta.annotation.Resource;
+import java.io.InputStream;
 
 /**
- * COS 管理器
+ * MinIO 对象存储操作
  *
  * @author qiutuan
  * @date 2024/11/16
@@ -27,56 +28,31 @@ public class MinioManager implements FileManager {
     @Resource
     private MinioClient minioClient;
 
-
     /**
-     * 上传对象
-     *
-     * @param key           唯一键
-     * @param localFilePath 本地文件路径
+     * 流式上传（失败抛出业务异常，避免假成功）
      */
     @Override
-    public void putObject(String key, String localFilePath) {
+    public void putObject(String key, InputStream inputStream, long contentLength, String contentType) {
         try {
-            PutObjectArgs objectArgs = PutObjectArgs.builder().bucket(minioClientConfig.getBucket()).object(key)
-                    .stream(FileUtil.getInputStream(localFilePath), new File(localFilePath).length(), -1).contentType("application/octet-stream").build();
+            PutObjectArgs objectArgs = PutObjectArgs.builder()
+                    .bucket(minioClientConfig.getBucket())
+                    .object(key)
+                    .stream(inputStream, contentLength, -1)
+                    .contentType(StringUtils.defaultIfBlank(contentType, "application/octet-stream"))
+                    .build();
             minioClient.putObject(objectArgs);
         } catch (Exception e) {
-            log.error("上传对象失败", e);
+            log.error("上传对象失败, key={}", key, e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "上传失败");
         }
     }
 
     /**
-     * 上传对象
-     *
-     * @param key  唯一键
-     * @param file 文件
+     * 生成 MinIO 访问地址（endpoint/bucket/key）
      */
     @Override
-    public void putObject(String key, File file) {
-
-        try {
-            PutObjectArgs objectArgs = PutObjectArgs.builder().bucket(minioClientConfig.getBucket()).object(key)
-                    .stream(FileUtil.getInputStream(file), file.length(), -1).contentType("application/octet-stream").build();
-            minioClient.putObject(objectArgs);
-        } catch (Exception e) {
-            log.error("上传对象失败", e);
-        }
+    public String getFileUrl(String key) {
+        return StringUtils.stripEnd(minioClientConfig.getEndpoint(), "/") + "/"
+                + minioClientConfig.getBucket() + key;
     }
-
-    /**
-     * 删除
-     *
-     * @param fileName 文件名
-     * @return 是否删除成功
-     */
-    public boolean remove(String fileName) {
-        try {
-            minioClient.removeObject(RemoveObjectArgs.builder().bucket(minioClientConfig.getBucket()).object(fileName).build());
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
-    }
-
 }
-

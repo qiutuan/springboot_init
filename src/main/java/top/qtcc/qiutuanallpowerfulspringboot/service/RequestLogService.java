@@ -10,16 +10,14 @@ import top.qtcc.qiutuanallpowerfulspringboot.domain.entity.RequestLog;
  * @date 2024/12/07
  */
 public interface RequestLogService extends IService<RequestLog> {
-    
+
     /**
      * 异步保存请求日志
-     *
-     * @param requestLog 请求日志
      */
     void asyncSave(RequestLog requestLog);
-    
+
     /**
      * 清理过期日志
      */
     void cleanExpiredLogs();
-} 
+}

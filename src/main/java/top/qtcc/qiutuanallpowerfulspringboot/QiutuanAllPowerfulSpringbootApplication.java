@@ -16,20 +16,6 @@ public class QiutuanAllPowerfulSpringbootApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(QiutuanAllPowerfulSpringbootApplication.class, args);
-        System.out.println("""
-                                         .-----------------TTTT_-----_______         \s
-                                       /''''''''''(______O] ----------____  \\______/]_
-                    __...---'""\"\\_ --''   Q                               ___________@
-                |'''                   ._   _______________=---------""\"""\""         \s
-                |                ..--''|   l L |_l   |                               \s
-                |          ..--''      .  /-___j '   '                               \s
-                |    ..--''           /  ,       '   '                               \s
-                |--''                /           `    \\                             \s
-                                     L__'         \\    -                            \s
-                                                   -    '-.                          \s
-                                                    '.    /                          \s
-                                                      '-./                           \s
-                """);
     }
 
 }

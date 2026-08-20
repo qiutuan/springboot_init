@@ -3,22 +3,24 @@ package top.qtcc.qiutuanallpowerfulspringboot.filter;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.*;
-import javax.servlet.annotation.WebFilter;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 
 /**
- *  防止XSS攻击 Filter
+ * 防止 XSS 攻击 Filter（仅对请求参数做转义；@RequestBody JSON 建议在输出端做白名单清洗）
  *
  * @author qiutuan
  * @date 2024/12/07
  */
 @Component
-@WebFilter(urlPatterns = "/*")
-@Order(1)
+@Order(2)
 public class XssFilter implements Filter {
-    
+
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {

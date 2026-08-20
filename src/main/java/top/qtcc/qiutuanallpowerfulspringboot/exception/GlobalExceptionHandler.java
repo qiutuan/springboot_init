@@ -1,17 +1,21 @@
 package top.qtcc.qiutuanallpowerfulspringboot.exception;
 
+import cn.dev33.satoken.exception.NotLoginException;
+import cn.dev33.satoken.exception.NotPermissionException;
+import cn.dev33.satoken.exception.NotRoleException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import top.qtcc.qiutuanallpowerfulspringboot.common.BaseResponse;
 import top.qtcc.qiutuanallpowerfulspringboot.common.ResultUtils;
 import top.qtcc.qiutuanallpowerfulspringboot.domain.enums.ErrorCode;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.ConstraintViolationException;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -27,22 +31,52 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     /**
-     *  处理自定义异常
-     *
-     * @param e {@link BusinessException }
-     * @return {@link BaseResponse }<{@link ? }>
+     * 处理自定义业务异常（warn 级别，避免预期内异常刷错误日志）
      */
     @ExceptionHandler(BusinessException.class)
     public BaseResponse<?> handleBusinessException(BusinessException e) {
-        log.error("业务异常", e);
+        log.warn("业务异常 code={}, message={}", e.getCode(), e.getMessage());
         return ResultUtils.error(e.getCode(), e.getMessage());
     }
 
     /**
-     *  处理参数校验异常
-     *
-     * @param e {@link MethodArgumentNotValidException }
-     * @return {@link BaseResponse }<{@link ? }>
+     * Sa-Token 未登录
+     */
+    @ExceptionHandler(NotLoginException.class)
+    public BaseResponse<?> handleNotLoginException(NotLoginException e) {
+        log.warn("未登录: {}", e.getMessage());
+        return ResultUtils.error(ErrorCode.NOT_LOGIN_ERROR.getCode(), "未登录或登录已过期");
+    }
+
+    /**
+     * Sa-Token 无角色
+     */
+    @ExceptionHandler(NotRoleException.class)
+    public BaseResponse<?> handleNotRoleException(NotRoleException e) {
+        log.warn("无角色权限: {}", e.getMessage());
+        return ResultUtils.error(ErrorCode.NO_AUTH_ERROR.getCode(), "无权限访问");
+    }
+
+    /**
+     * Sa-Token 无权限
+     */
+    @ExceptionHandler(NotPermissionException.class)
+    public BaseResponse<?> handleNotPermissionException(NotPermissionException e) {
+        log.warn("无接口权限: {}", e.getMessage());
+        return ResultUtils.error(ErrorCode.NO_AUTH_ERROR.getCode(), "无权限访问");
+    }
+
+    /**
+     * 上传文件超限
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public BaseResponse<?> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e) {
+        log.warn("文件上传超限: {}", e.getMessage());
+        return ResultUtils.error(ErrorCode.PARAMS_ERROR.getCode(), "文件大小超出限制");
+    }
+
+    /**
+     * 处理参数校验异常（@RequestBody）
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public BaseResponse<?> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
@@ -54,10 +88,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     *  处理参数校验异常
-     *
-     * @param e {@link ConstraintViolationException }
-     * @return {@link BaseResponse }<{@link ? }>
+     * 处理参数校验异常（方法参数）
      */
     @ExceptionHandler(ConstraintViolationException.class)
     public BaseResponse<?> handleConstraintViolationException(ConstraintViolationException e) {
@@ -69,10 +100,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     *  处理参数校验异常
-     *
-     * @param e {@link BindException }
-     * @return {@link BaseResponse }<{@link ? }>
+     * 处理参数绑定异常
      */
     @ExceptionHandler(BindException.class)
     public BaseResponse<?> handleBindException(BindException e) {
@@ -84,10 +112,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     *  处理系统异常
-     *
-     * @param e {@link Exception }
-     * @return {@link BaseResponse }<{@link ? }>
+     * 处理系统异常
      */
     @ExceptionHandler(Exception.class)
     public BaseResponse<?> handleException(Exception e) {

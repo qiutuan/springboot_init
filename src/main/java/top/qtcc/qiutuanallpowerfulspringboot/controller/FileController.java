@@ -1,8 +1,10 @@
 package top.qtcc.qiutuanallpowerfulspringboot.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.hutool.core.io.FileUtil;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -10,22 +12,21 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import top.qtcc.qiutuanallpowerfulspringboot.common.BaseResponse;
 import top.qtcc.qiutuanallpowerfulspringboot.common.ResultUtils;
-import top.qtcc.qiutuanallpowerfulspringboot.constant.FileConstant;
 import top.qtcc.qiutuanallpowerfulspringboot.domain.dto.file.UploadFileRequest;
 import top.qtcc.qiutuanallpowerfulspringboot.domain.entity.User;
 import top.qtcc.qiutuanallpowerfulspringboot.domain.enums.ErrorCode;
 import top.qtcc.qiutuanallpowerfulspringboot.domain.enums.FileUploadBizEnum;
 import top.qtcc.qiutuanallpowerfulspringboot.exception.BusinessException;
 import top.qtcc.qiutuanallpowerfulspringboot.manager.file.FileManager;
-import top.qtcc.qiutuanallpowerfulspringboot.servicec.UserService;
+import top.qtcc.qiutuanallpowerfulspringboot.service.UserService;
 
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
-import java.io.File;
+import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Locale;
+import java.util.UUID;
 
 /**
- * 文件接口
+ * 文件接口（流式上传到对象存储，不落本地临时文件）
  *
  * @author qiutuan
  * @date 2024/11/02
@@ -38,66 +39,68 @@ public class FileController {
     @Resource
     private UserService userService;
 
-   @Resource(name = "fileManager")
-   private FileManager fileManager;
+    @Resource(name = "fileManager")
+    private FileManager fileManager;
 
     /**
      * 文件上传
-     *
-     * @param multipartFile 文件
-     * @param uploadFileRequest 上传文件请求
-     * @param request 请求
-     * @return 文件地址
      */
+    @SaCheckLogin
     @PostMapping("/upload")
     public BaseResponse<String> uploadFile(@RequestPart("file") MultipartFile multipartFile,
-                                           UploadFileRequest uploadFileRequest, HttpServletRequest request) {
+                                           UploadFileRequest uploadFileRequest) {
         String biz = uploadFileRequest.getBiz();
         FileUploadBizEnum fileUploadBizEnum = FileUploadBizEnum.getEnumByValue(biz);
         if (fileUploadBizEnum == null) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "业务类型错误");
         }
         validFile(multipartFile, fileUploadBizEnum);
-        User loginUser = userService.getLoginUser(request);
-        // 文件目录：根据业务、用户来划分
-        String uuid = RandomStringUtils.randomAlphanumeric(8);
-        String filename = uuid + "-" + multipartFile.getOriginalFilename();
+        User loginUser = userService.getLoginUser();
+        // 文件目录：按业务、用户划分，文件名使用 UUID 前缀防重名
+        String originalName = StringUtils.defaultString(multipartFile.getOriginalFilename(), "file");
+        String safeName = sanitizeFileName(originalName);
+        String filename = UUID.randomUUID().toString().replace("-", "") + "-" + safeName;
         String filepath = String.format("/%s/%s/%s", fileUploadBizEnum.getValue(), loginUser.getId(), filename);
-        File file = null;
-        try {
-            // 上传文件
-            file = File.createTempFile(filepath, null);
-            multipartFile.transferTo(file);
-            fileManager.putObject(filepath, file);
-            // 返回可访问地址
-            return ResultUtils.success(FileConstant.COS_HOST + filepath);
+        try (InputStream inputStream = multipartFile.getInputStream()) {
+            // 流式上传，避免 createTempFile 路径问题与磁盘 IO
+            fileManager.putObject(filepath, inputStream, multipartFile.getSize(), multipartFile.getContentType());
+            // 返回可访问地址（由当前启用的存储管理器生成）
+            return ResultUtils.success(fileManager.getFileUrl(filepath));
         } catch (Exception e) {
-            log.error("file upload error, filepath = " + filepath, e);
+            log.error("file upload error, filepath = {}", filepath, e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "上传失败");
-        } finally {
-            if (file != null) {
-                // 删除临时文件
-                boolean delete = file.delete();
-                if (!delete) {
-                    log.error("file delete error, filepath = {}", filepath);
-                }
-            }
         }
     }
 
     /**
-     * 校验文件
-     *
-     * @param multipartFile 文件
-     * @param fileUploadBizEnum 业务类型
+     * 清洗文件名：去掉路径分隔符与危险字符，防止路径穿越
+     */
+    private String sanitizeFileName(String name) {
+        StringBuilder sb = new StringBuilder(name.length());
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (c == '/' || c == '\\' || c == ':' || c == '*' || c == '?' || c == '"'
+                    || c == '<' || c == '>' || c == '|' || Character.isWhitespace(c)) {
+                sb.append('_');
+            } else {
+                sb.append(c);
+            }
+        }
+        String cleaned = sb.toString().replace("..", "_");
+        if (cleaned.length() > 100) {
+            cleaned = cleaned.substring(cleaned.length() - 100);
+        }
+        return cleaned;
+    }
+
+    /**
+     * 校验文件大小与后缀
      */
     private void validFile(MultipartFile multipartFile, FileUploadBizEnum fileUploadBizEnum) {
-        // 文件大小
         long fileSize = multipartFile.getSize();
-        // 文件后缀
-        String fileSuffix = FileUtil.getSuffix(multipartFile.getOriginalFilename());
+        String fileSuffix = FileUtil.getSuffix(StringUtils.defaultString(multipartFile.getOriginalFilename(), ""))
+                .toLowerCase(Locale.ROOT);
         final long ONE_M = 1024 * 1024L;
-        // 用户头像
         if (FileUploadBizEnum.USER_AVATAR.equals(fileUploadBizEnum)) {
             if (fileSize > ONE_M) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件大小不能超过 1M");
@@ -105,18 +108,14 @@ public class FileController {
             if (!Arrays.asList("jpeg", "jpg", "svg", "png", "webp").contains(fileSuffix)) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件类型错误");
             }
-        }
-        // 用户文件
-        if (FileUploadBizEnum.USER_FILE.equals(fileUploadBizEnum)) {
+        } else if (FileUploadBizEnum.USER_FILE.equals(fileUploadBizEnum)) {
             if (fileSize > 10 * ONE_M) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件大小不能超过 10M");
             }
             if (!Arrays.asList("pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt").contains(fileSuffix)) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件类型错误");
             }
-        }
-        // 用户图片
-        if (FileUploadBizEnum.USER_IMAGE.equals(fileUploadBizEnum)) {
+        } else if (FileUploadBizEnum.USER_IMAGE.equals(fileUploadBizEnum)) {
             if (fileSize > 5 * ONE_M) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件大小不能超过 5M");
             }

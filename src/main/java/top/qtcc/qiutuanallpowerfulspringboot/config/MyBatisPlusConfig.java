@@ -11,6 +11,8 @@ import org.springframework.context.annotation.Configuration;
 import java.time.LocalDateTime;
 
 /**
+ * MyBatis-Plus 配置
+ *
  * @author qiutuan
  * @date 2024/12/10
  */
@@ -18,22 +20,17 @@ import java.time.LocalDateTime;
 public class MyBatisPlusConfig {
 
     /**
-     * 添加分页插件
+     * 分页插件
      */
     @Bean
     public MybatisPlusInterceptor mybatisPlusInterceptor() {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
-        // 如果配置多个插件, 切记分页最后添加
         interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
-        // 如果有多数据源可以不配具体类型, 否则都建议配上具体的 DbType
         return interceptor;
     }
 
-
     /**
-     * 自动填充功能（自动填充创建时间和更新时间）
-     *
-     * @return {@link MetaObjectHandler }
+     * 自动填充创建时间/更新时间（实体字段需为 LocalDateTime）
      */
     @Bean
     public MetaObjectHandler metaObjectHandler() {
@@ -51,4 +48,3 @@ public class MyBatisPlusConfig {
         };
     }
 }
-

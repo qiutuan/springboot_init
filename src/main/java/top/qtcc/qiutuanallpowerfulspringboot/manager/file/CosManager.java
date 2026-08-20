@@ -1,15 +1,16 @@
 package top.qtcc.qiutuanallpowerfulspringboot.manager.file;
 
 import com.qcloud.cos.COSClient;
-import com.qcloud.cos.model.PutObjectRequest;
+import com.qcloud.cos.model.ObjectMetadata;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import top.qtcc.qiutuanallpowerfulspringboot.config.CosClientConfig;
 
-import javax.annotation.Resource;
-import java.io.File;
+import jakarta.annotation.Resource;
+import java.io.InputStream;
 
 /**
- * Cos 对象存储操作
+ * 腾讯云 COS 对象存储操作
  *
  * @author qiutuan
  * @date 2024/11/02
@@ -24,29 +25,24 @@ public class CosManager implements FileManager {
     private COSClient cosClient;
 
     /**
-     * 上传对象
-     *
-     * @param key 唯一键
-     * @param localFilePath 本地文件路径
-     * @return 上传结果
+     * 流式上传
      */
     @Override
-    public void putObject(String key, String localFilePath) {
-        PutObjectRequest putObjectRequest = new PutObjectRequest(cosClientConfig.getBucket(), key,
-                new File(localFilePath));
-        cosClient.putObject(putObjectRequest);
+    public void putObject(String key, InputStream inputStream, long contentLength, String contentType) {
+        ObjectMetadata metadata = new ObjectMetadata();
+        metadata.setContentLength(contentLength);
+        if (StringUtils.isNotBlank(contentType)) {
+            metadata.setContentType(contentType);
+        }
+        cosClient.putObject(cosClientConfig.getBucket(), key, inputStream, metadata);
     }
 
     /**
-     * 上传对象
-     *
-     * @param key  唯一键
-     * @param file 文件
+     * 生成 COS 访问地址
      */
     @Override
-    public void putObject(String key, File file) {
-        PutObjectRequest putObjectRequest = new PutObjectRequest(cosClientConfig.getBucket(), key,
-                file);
-        cosClient.putObject(putObjectRequest);
+    public String getFileUrl(String key) {
+        return String.format("https://%s.cos.%s.myqcloud.com%s",
+                cosClientConfig.getBucket(), cosClientConfig.getRegion(), key);
     }
 }

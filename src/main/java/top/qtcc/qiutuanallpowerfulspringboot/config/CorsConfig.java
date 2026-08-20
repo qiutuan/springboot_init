@@ -1,11 +1,14 @@
 package top.qtcc.qiutuanallpowerfulspringboot.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.util.List;
+
 /**
- * 全局跨域配置
+ * 全局跨域配置（白名单从配置读取，生产按域名收敛）
  *
  * @author qiutuan
  * @date 2024/11/02
@@ -13,19 +16,16 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
-    /**
-     *  跨域配置
-     *
-     * @param registry 跨域注册器
-     */
+    @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000}")
+    private List<String> allowedOrigins;
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        // 覆盖所有请求
         registry.addMapping("/**")
-                // 允许发送 Cookie
+                // 允许携带 Cookie/凭证
                 .allowCredentials(true)
-                // 放行哪些域名（必须用 patterns，否则 * 会和 allowCredentials 冲突）
-                .allowedOriginPatterns("*")
+                // 白名单域名（与 allowCredentials 兼容，不能使用 *）
+                .allowedOriginPatterns(allowedOrigins.toArray(new String[0]))
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .exposedHeaders("*");

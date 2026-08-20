@@ -1,5 +1,7 @@
 package top.qtcc.qiutuanallpowerfulspringboot.domain.dto.user;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -13,25 +15,21 @@ import java.io.Serializable;
 @Data
 public class UserAddRequest implements Serializable {
 
-    /**
-     * 用户昵称
-     */
-    private String userName;
+    private static final long serialVersionUID = 1L;
 
-    /**
-     * 账号
-     */
+    @NotBlank(message = "账号不能为空")
+    @Size(min = 4, max = 32, message = "账号长度需在 4-32 之间")
     private String userAccount;
 
-    /**
-     * 用户头像
-     */
+    @Size(max = 64, message = "昵称过长")
+    private String userName;
+
     private String userAvatar;
 
+    private String userProfile;
+
     /**
-     * 用户角色: user, admin
+     * 用户角色编码: user / admin / ban
      */
     private String userRole;
-
-    private static final long serialVersionUID = 1L;
 }

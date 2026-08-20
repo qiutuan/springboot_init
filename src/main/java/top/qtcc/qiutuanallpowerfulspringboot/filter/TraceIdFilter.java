@@ -1,20 +1,20 @@
 package top.qtcc.qiutuanallpowerfulspringboot.filter;
 
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.MDC;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.UUID;
 
 /**
- * 日志链路追踪
+ * 日志链路追踪：支持透传外部 X-Trace-Id，否则生成
  *
  * @author qiutuan
  * @date 2024/12/06
@@ -25,24 +25,18 @@ public class TraceIdFilter extends OncePerRequestFilter {
 
     private static final String TRACE_ID = "traceId";
 
-    /**
-     * 日志链路追踪
-     *
-     * @param request     请求
-     * @param response    响应
-     * @param filterChain 过滤器链
-     * @throws ServletException 异常
-     * @throws IOException     异常
-     */
     @Override
-    protected void doFilterInternal(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response,
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         try {
-            String traceId = UUID.randomUUID().toString().replace("-", "");
+            String traceId = request.getHeader("X-Trace-Id");
+            if (!StringUtils.hasText(traceId)) {
+                traceId = UUID.randomUUID().toString().replace("-", "");
+            }
             MDC.put(TRACE_ID, traceId);
             filterChain.doFilter(request, response);
         } finally {
             MDC.remove(TRACE_ID);
         }
     }
-} 
+}

@@ -8,7 +8,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 
 /**
- *  定时任务配置
+ * 定时任务配置
  *
  * @author qiutuan
  * @date 2024/12/08
@@ -20,8 +20,7 @@ public class ScheduleConfig implements SchedulingConfigurer {
     @Bean(name = "taskScheduler")
     public ThreadPoolTaskScheduler taskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
-        // 设置线程池大小
-        scheduler.setPoolSize(10);
+        scheduler.setPoolSize(4);
         scheduler.setThreadNamePrefix("scheduled-task-");
         scheduler.initialize();
         return scheduler;
@@ -29,7 +28,6 @@ public class ScheduleConfig implements SchedulingConfigurer {
 
     @Override
     public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
-        // 使用自定义的ThreadPoolTaskScheduler作为调度器
         taskRegistrar.setTaskScheduler(taskScheduler());
     }
 }

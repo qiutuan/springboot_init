@@ -1,5 +1,6 @@
 package top.qtcc.qiutuanallpowerfulspringboot.aspect;
 
+import cn.dev33.satoken.stp.StpUtil;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -10,14 +11,15 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import top.qtcc.qiutuanallpowerfulspringboot.annotation.RepeatSubmit;
 import top.qtcc.qiutuanallpowerfulspringboot.domain.enums.ErrorCode;
 import top.qtcc.qiutuanallpowerfulspringboot.exception.BusinessException;
+import top.qtcc.qiutuanallpowerfulspringboot.utils.NetUtils;
 
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 防重复提交切面
+ * 防重复提交切面（按 用户ID/IP + 接口 维度，登录/注销等匿名场景互不阻塞）
  *
  * @author qiutuan
  * @date 2024/12/10
@@ -31,23 +33,23 @@ public class RepeatSubmitAspect {
 
     @Around("@annotation(repeatSubmit)")
     public Object around(ProceedingJoinPoint point, RepeatSubmit repeatSubmit) throws Throwable {
-        HttpServletRequest request = ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes())).getRequest();
+        HttpServletRequest request = ((ServletRequestAttributes) Objects.requireNonNull(
+                RequestContextHolder.getRequestAttributes())).getRequest();
 
-        // 获取请求token，如果没有token，使用请求地址
-        String token = request.getHeader("token");
-        String key = token == null ? request.getRequestURI() : token;
+        String identity;
+        Object loginId = StpUtil.getLoginIdDefaultNull();
+        if (loginId != null) {
+            identity = "u" + loginId;
+        } else {
+            identity = "ip:" + NetUtils.getIpAddress(request);
+        }
 
-        // 构建Redis键
-        String repeatKey = "repeat_submit:" + key + ":" + request.getRequestURI();
+        String repeatKey = "repeat_submit:" + request.getRequestURI() + ":" + identity;
 
-        // 判断是否重复提交
         if (Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent(repeatKey, 1,
                 repeatSubmit.interval(), TimeUnit.MILLISECONDS))) {
-            // 不是重复提交，执行方法
             return point.proceed();
-        } else {
-            // 重复提交
-            throw new BusinessException(ErrorCode.OPERATION_ERROR, repeatSubmit.message());
         }
+        throw new BusinessException(ErrorCode.OPERATION_ERROR, repeatSubmit.message());
     }
-} 
+}
