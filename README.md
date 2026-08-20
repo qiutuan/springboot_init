@@ -9,10 +9,10 @@
 ## 主要特性
 
 ### 1. 认证与权限（Sa-Token + RBAC）
-- 登录认证：Sa-Token（token 持久化到 Redis）
+- 登录认证：Sa-Token（token 写入响应头 + 返回体）
 - 角色权限：RBAC 模型（sys_role / sys_permission / sys_user_role / sys_role_permission）
 - 注解鉴权：`@SaCheckLogin` / `@SaCheckRole("admin")` / `@SaCheckPermission("user:list")`
-- 密码加密：BCrypt（替换原 MD5）
+- 密码加密：BCrypt
 
 ### 2. AI 能力（Spring AI 1.0 + Spring AI Alibaba / DashScope）
 - 非流式对话：`POST /api/ai/chat`（多轮上下文持久化到 Redis）
@@ -33,24 +33,52 @@
 ### 5. 实时通信
 - WebSocket 单点/广播 + 心跳
 
+## 环境配置（多 Profile）
+
+配置文件按环境拆分：
+
+| 文件 | 说明 |
+|---|---|
+| `application.yml` | 公共配置（AI/MyBatis-Plus/Sa-Token/上传限制等） |
+| `application-dev.yml` | 开发环境（默认激活）：本地 MySQL/Redis/MinIO，打印 SQL，开启接口文档 |
+| `application-prod.yml` | 生产环境：全部敏感项走环境变量（缺失即启动失败），不打印 SQL，默认关闭文档 |
+
+### 激活方式
+
+```bash
+# 开发（默认，无需指定）
+mvn spring-boot:run
+
+# 生产（环境变量方式，推荐部署时使用）
+export SPRING_PROFILES_ACTIVE=prod
+mvn spring-boot:run
+
+# 或通过 JVM 参数
+mvn spring-boot:run -Dspring-boot.run.profiles=prod
+```
+
+### 生产环境必填环境变量
+
+| 变量 | 说明 |
+|---|---|
+| `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` | 数据库连接 |
+| `REDIS_HOST` / `REDIS_PASSWORD` | Redis |
+| `MINIO_ENDPOINT` / `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` / `MINIO_BUCKET` | MinIO（或用 COS_*） |
+| `DASHSCOPE_API_KEY` | 通义千问 API Key（AI 功能） |
+| `CORS_ALLOWED_ORIGINS` | 跨域白名单（逗号分隔，禁止 `*`） |
+
+> 生产缺失上述必填变量时应用启动即失败（fail-fast），避免带错误配置上线。
+
 ## 快速开始
 
 ### 环境要求
 - JDK 17+、Maven 3.6+
-- MySQL 8+（执行 `src/main/resources/sql/springboot_init.sql`）
+- MySQL 8+（执行 `src/main/resources/sql/springboot_init.sql` 初始化；已有库执行 `rbac_migration.sql` 增量迁移）
 - Redis 6+
-
-### 配置（环境变量）
-| 变量 | 说明 |
-|---|---|
-| `DB_PASSWORD` | MySQL 密码 |
-| `REDIS_HOST` / `REDIS_PASSWORD` | Redis 地址/密码 |
-| `DASHSCOPE_API_KEY` | 通义千问 API Key（AI 功能需要，RAG 启动时做 embedding） |
-| `MINIO_ENDPOINT` 等 | 对象存储 |
 
 ### 登录示例
 ```bash
-# 注册/登录后，响应头 satoken 即登录 token
+# 注册/登录后，响应头 satoken 即登录 token（返回体 data.token 同值）
 curl -X POST http://localhost:8800/user/login \
   -H "Content-Type: application/json" \
   -d '{"userAccount":"test","userPassword":"12345678"}'

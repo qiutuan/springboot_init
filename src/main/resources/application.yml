@@ -1,5 +1,10 @@
+# ============================================================
+# 公共配置（所有环境生效）
+# 环境差异配置见 application-dev.yml / application-prod.yml
+# 激活方式：SPRING_PROFILES_ACTIVE=prod（默认 dev）
+# ============================================================
+
 server:
-  port: 8800
   servlet:
     session:
       cookie:
@@ -8,31 +13,14 @@ server:
 spring:
   application:
     name: qiutuan-all-powerful-springboot
-  #  数据源配置
-  datasource:
-    url: jdbc:mysql://localhost:3306/sp_init?useSSL=false&serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:123456789qt}
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  # redis 配置
-  redis:
-    host: ${REDIS_HOST:localhost}
-    port: ${REDIS_PORT:6379}
-    database: 0
-    password: ${REDIS_PASSWORD:}
-    timeout: 10s
-    lettuce:
-      pool:
-        min-idle: 0
-        max-idle: 8
-        max-active: 8
-        max-wait: -1ms
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   # 上传文件大小限制（与 FileController 业务上限对齐）
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
-  # Spring AI Alibaba（DashScope / 通义千问）
+  # Spring AI Alibaba（DashScope / 通义千问），生产必须配置真实 DASHSCOPE_API_KEY
   ai:
     dashscope:
       api-key: ${DASHSCOPE_API_KEY:sk-xxx}
@@ -48,8 +36,6 @@ mybatis-plus:
   configuration:
     # 开启驼峰命名映射
     map-underscore-to-camel-case: true
-    # 生产环境请移除（避免打印 SQL）
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     banner: false
     db-config:
@@ -71,37 +57,14 @@ sa-token:
   is-read-header: true
   is-write-header: true     # 登录后把 token 写入响应头
 
-# 腾讯云对象存储配置（TODO 生产替换为环境变量）
-cos:
-  client:
-    accessKey: ${COS_ACCESS_KEY:xxx}
-    secretKey: ${COS_SECRET_KEY:xxx}
-    region: ${COS_REGION:xxx}
-    bucket: ${COS_BUCKET:xxx}
-
-# MinIO 对象存储配置（TODO 生产替换为环境变量）
-minio:
-  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
-  accessKey: ${MINIO_ACCESS_KEY:minioadmin}
-  secretKey: ${MINIO_SECRET_KEY:minioadmin}
-  bucket: ${MINIO_BUCKET:qiutuan}
-
-# 选择使用的对象存储：MinioManager | CosManager
-file:
-  manager: ${FILE_MANAGER:MinioManager}
-
 # 应用自定义配置
 app:
-  cors:
-    # 跨域白名单（逗号分隔，生产按域名收敛）
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173}
   ai:
     # RAG 知识库目录（相对工作目录，启动时自动加载 .md/.txt）
     knowledge-path: ${AI_KNOWLEDGE_PATH:./data/knowledge}
 
 # 接口文档配置
 knife4j:
-  enable: true
   openapi:
     title: "接口文档"
     version: 1.0

@@ -1,0 +1,65 @@
+# ============================================================
+# 开发环境配置（默认激活，SPRING_PROFILES_ACTIVE=dev）
+# 本地开发默认值；敏感项仍建议通过环境变量覆盖
+# ============================================================
+
+server:
+  port: 8800
+
+spring:
+  #  本地数据源
+  datasource:
+    url: jdbc:mysql://localhost:3306/sp_init?useSSL=false&serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456789qt}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  # 本地 redis
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    database: 0
+    password: ${REDIS_PASSWORD:}
+    timeout: 10s
+    lettuce:
+      pool:
+        min-idle: 0
+        max-idle: 8
+        max-active: 8
+        max-wait: -1ms
+
+# 开发环境打印 SQL，方便调试
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# 腾讯云对象存储（开发占位，配置 COS 后把 file.manager 改为 CosManager）
+cos:
+  client:
+    accessKey: ${COS_ACCESS_KEY:xxx}
+    secretKey: ${COS_SECRET_KEY:xxx}
+    region: ${COS_REGION:xxx}
+    bucket: ${COS_BUCKET:xxx}
+
+# MinIO 对象存储（本地默认）
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  accessKey: ${MINIO_ACCESS_KEY:minioadmin}
+  secretKey: ${MINIO_SECRET_KEY:minioadmin}
+  bucket: ${MINIO_BUCKET:qiutuan}
+
+# 选择使用的对象存储：MinioManager | CosManager
+file:
+  manager: ${FILE_MANAGER:MinioManager}
+
+app:
+  cors:
+    # 开发跨域白名单
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173}
+
+# 开发环境开启接口文档
+knife4j:
+  enable: true
+
+logging:
+  level:
+    top.qtcc.qiutuanallpowerfulspringboot: debug
