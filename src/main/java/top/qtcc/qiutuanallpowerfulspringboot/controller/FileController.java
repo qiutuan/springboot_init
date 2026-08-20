@@ -107,28 +107,13 @@ public class FileController {
         long fileSize = multipartFile.getSize();
         String fileSuffix = FileUtil.getSuffix(StringUtils.defaultString(multipartFile.getOriginalFilename(), ""))
                 .toLowerCase(Locale.ROOT);
-        final long ONE_M = 1024 * 1024L;
-        if (FileUploadBizEnum.USER_AVATAR.equals(fileUploadBizEnum)) {
-            if (fileSize > ONE_M) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件大小不能超过 1M");
-            }
-            if (!Arrays.asList("jpeg", "jpg", "svg", "png", "webp").contains(fileSuffix)) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件类型错误");
-            }
-        } else if (FileUploadBizEnum.USER_FILE.equals(fileUploadBizEnum)) {
-            if (fileSize > 10 * ONE_M) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件大小不能超过 10M");
-            }
-            if (!Arrays.asList("pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt").contains(fileSuffix)) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件类型错误");
-            }
-        } else if (FileUploadBizEnum.USER_IMAGE.equals(fileUploadBizEnum)) {
-            if (fileSize > 5 * ONE_M) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件大小不能超过 5M");
-            }
-            if (!Arrays.asList("jpeg", "jpg", "svg", "png", "webp").contains(fileSuffix)) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件类型错误");
-            }
+        
+        long maxSize = fileUploadBizEnum.getMaxSize();
+        if (fileSize > maxSize) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件大小不能超过 " + (maxSize / (1024 * 1024L)) + "M");
+        }
+        if (!fileUploadBizEnum.getSuffixWhitelist().contains(fileSuffix)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "文件类型错误");
         }
     }
 }
