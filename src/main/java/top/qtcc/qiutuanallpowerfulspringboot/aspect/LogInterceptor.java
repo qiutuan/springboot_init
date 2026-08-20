@@ -32,14 +32,17 @@ public class LogInterceptor {
     public Object doInterceptor(ProceedingJoinPoint point) throws Throwable {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        RequestAttributes requestAttributes = RequestContextHolder.currentRequestAttributes();
-        HttpServletRequest httpServletRequest = ((ServletRequestAttributes) requestAttributes).getRequest();
+        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+        HttpServletRequest httpServletRequest = null;
+        if (requestAttributes instanceof ServletRequestAttributes servletRequestAttributes) {
+            httpServletRequest = servletRequestAttributes.getRequest();
+        }
         String requestId = UUID.randomUUID().toString();
-        String url = httpServletRequest.getRequestURI();
+        String url = httpServletRequest != null ? httpServletRequest.getRequestURI() : "N/A";
+        String ip = httpServletRequest != null ? httpServletRequest.getRemoteHost() : "127.0.0.1";
         Object[] args = point.getArgs();
         String reqParam = "[" + StringUtils.join(args, ", ") + "]";
-        log.info("request start, id: {}, path: {}, ip: {}, params: {}", requestId, url,
-                httpServletRequest.getRemoteHost(), reqParam);
+        log.info("request start, id: {}, path: {}, ip: {}, params: {}", requestId, url, ip, reqParam);
         Object result = point.proceed();
         stopWatch.stop();
         log.info("request end, id: {}, cost: {}ms", requestId, stopWatch.getTotalTimeMillis());
