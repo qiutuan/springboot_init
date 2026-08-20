@@ -1,5 +1,6 @@
 package top.qtcc.qiutuanallpowerfulspringboot.service.impl;
 
+import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -128,9 +129,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
         }
         Long userId = StpUtil.getLoginIdAsLong();
-        User user = this.getById(userId);
+        // 尝试从 SaSession 缓存中获取用户信息
+        SaSession session = StpUtil.getSessionByLoginId(userId, true);
+        User user = (User) session.get("user");
         if (user == null) {
-            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+            user = this.getById(userId);
+            if (user == null) {
+                throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+            }
+            session.set("user", user);
         }
         return user;
     }
@@ -224,5 +231,28 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         userRole.setUserId(userId);
         userRole.setRoleId(role.getId());
         sysUserRoleMapper.insert(userRole);
+    }
+
+    @Override
+    public boolean updateById(User entity) {
+        boolean result = super.updateById(entity);
+        if (result && entity.getId() != null) {
+            // 清理 SaSession 中的缓存，下一次 getLoginUser 时重新从数据库加载最新数据
+            SaSession session = StpUtil.getSessionByLoginId(entity.getId(), false);
+            if (session != null) {
+                session.delete("user");
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public boolean removeById(java.io.Serializable id) {
+        boolean result = super.removeById(id);
+        if (result) {
+            // 用户被删除时强制下线
+            StpUtil.logout(id);
+        }
+        return result;
     }
 }
