@@ -35,3 +35,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# 本地与生产环境敏感配置及备份文件
+src/main/resources/application-prod.yml
+src/main/resources/application-local.yml
+*.yml.bak
+*.yaml.bak
+*.log
+logs/
+data/

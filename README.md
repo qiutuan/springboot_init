@@ -61,6 +61,9 @@ top.qtcc.qiutuanallpowerfulspringboot
 - `DASHSCOPE_API_KEY`：AI 大模型 API 密钥
 - `CORS_ALLOWED_ORIGINS`：跨域允许来源白名单（英文逗号分割，禁止 `*`）
 
+> [!WARNING]
+> 为了安全，请勿将真实的账号、密码、API Key 等敏感配置硬编码并提交至 Git 仓库。本地开发建议使用环境变量或创建 `application-local.yml`（已被 `.gitignore` 忽略）进行本地覆盖，生产环境配置必须使用系统环境变量注入。
+
 ---
 
 ## 🏁 快速开始
