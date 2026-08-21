@@ -2,12 +2,11 @@ package top.qtcc.qiutuanallpowerfulspringboot.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
 /**
  * 角色实体（RBAC）
@@ -15,8 +14,9 @@ import java.time.LocalDateTime;
  * @author qiutuan
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @TableName("sys_role")
-public class SysRole implements Serializable {
+public class SysRole extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -32,11 +32,4 @@ public class SysRole implements Serializable {
      * 角色名称
      */
     private String roleName;
-
-    private LocalDateTime createTime;
-
-    private LocalDateTime updateTime;
-
-    @TableLogic
-    private Integer isDelete;
 }
