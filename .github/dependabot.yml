@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "daily"     
+    open-pull-requests-limit: 10 
+    commit-message:
+      prefix: "build(deps)"
+    labels:
+      - "dependencies"
+    reviewers: []
+    allow:
+      - dependency-type: "all"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "build(ci)"
+    open-pull-requests-limit: 5
