@@ -132,13 +132,13 @@ public class UserController {
      */
     @SaCheckRole(UserConstant.ADMIN_ROLE)
     @GetMapping("/get")
-    public BaseResponse<User> getUserById(long id) {
+    public BaseResponse<UserVO> getUserById(long id) {
         if (id <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         User user = userService.getById(id);
         ThrowUtils.throwIf(user == null, ErrorCode.NOT_FOUND_ERROR);
-        return ResultUtils.success(user);
+        return ResultUtils.success(userService.getUserVO(user));
     }
 
     /**
@@ -160,7 +160,7 @@ public class UserController {
      */
     @SaCheckRole(UserConstant.ADMIN_ROLE)
     @PostMapping("/list/page")
-    public BaseResponse<Page<User>> listUserByPage(@RequestBody @Valid UserQueryRequest userQueryRequest) {
+    public BaseResponse<Page<UserVO>> listUserByPage(@RequestBody @Valid UserQueryRequest userQueryRequest) {
         if (userQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -169,7 +169,9 @@ public class UserController {
         ThrowUtils.throwIf(size > CommonConstant.MAX_PAGE_SIZE, ErrorCode.PARAMS_ERROR, "分页大小超出限制");
         Page<User> userPage = userService.page(new Page<>(current, size),
                 userService.getQueryWrapper(userQueryRequest));
-        return ResultUtils.success(userPage);
+        Page<UserVO> userVOPage = new Page<>(current, size, userPage.getTotal());
+        userVOPage.setRecords(userService.getUserVO(userPage.getRecords()));
+        return ResultUtils.success(userVOPage);
     }
 
     /**

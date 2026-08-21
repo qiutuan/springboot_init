@@ -16,7 +16,12 @@ import top.qtcc.qiutuanallpowerfulspringboot.domain.entity.SysPermission;
 import top.qtcc.qiutuanallpowerfulspringboot.domain.entity.SysRole;
 import top.qtcc.qiutuanallpowerfulspringboot.service.SysRoleService;
 
+import org.springframework.beans.BeanUtils;
+import top.qtcc.qiutuanallpowerfulspringboot.domain.vo.rbac.SysPermissionVO;
+import top.qtcc.qiutuanallpowerfulspringboot.domain.vo.rbac.SysRoleVO;
+
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 权限控制接口（RBAC）
@@ -50,9 +55,16 @@ public class SysRoleController {
     @PostMapping("/role/list/page")
     @SaCheckRole(UserConstant.ADMIN_ROLE)
     @Operation(summary = "分页获取角色列表（管理员）")
-    public BaseResponse<Page<SysRole>> listRolesByPage(@RequestBody @Valid RoleQueryRequest queryRequest) {
+    public BaseResponse<Page<SysRoleVO>> listRolesByPage(@RequestBody @Valid RoleQueryRequest queryRequest) {
         Page<SysRole> rolePage = sysRoleService.listRolesByPage(queryRequest);
-        return ResultUtils.success(rolePage);
+        Page<SysRoleVO> roleVOPage = new Page<>(rolePage.getCurrent(), rolePage.getSize(), rolePage.getTotal());
+        List<SysRoleVO> voList = rolePage.getRecords().stream().map(role -> {
+            SysRoleVO vo = new SysRoleVO();
+            BeanUtils.copyProperties(role, vo);
+            return vo;
+        }).collect(Collectors.toList());
+        roleVOPage.setRecords(voList);
+        return ResultUtils.success(roleVOPage);
     }
 
     @PostMapping("/role/permission/assign")
@@ -74,8 +86,13 @@ public class SysRoleController {
     @GetMapping("/permission/list")
     @SaCheckLogin
     @Operation(summary = "获取所有权限列表")
-    public BaseResponse<List<SysPermission>> listAllPermissions() {
+    public BaseResponse<List<SysPermissionVO>> listAllPermissions() {
         List<SysPermission> list = sysRoleService.listAllPermissions();
-        return ResultUtils.success(list);
+        List<SysPermissionVO> voList = list.stream().map(p -> {
+            SysPermissionVO vo = new SysPermissionVO();
+            BeanUtils.copyProperties(p, vo);
+            return vo;
+        }).collect(Collectors.toList());
+        return ResultUtils.success(voList);
     }
 }
