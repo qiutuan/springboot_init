@@ -69,7 +69,11 @@ top.qtcc.qiutuanallpowerfulspringboot
 ## 🏁 快速开始
 
 ### 1. 启动依赖服务
-1. **数据库**：启动 MySQL 并执行 `src/main/resources/sql/springboot_init.sql`。
+1. **数据库**：启动 MySQL 并创建名为 `sp_init` (或自定义) 的数据库，执行项目根目录下的 `sql/init.sql` 文件进行建表及种子数据导入：
+   ```bash
+   # 示例命令行导入
+   mysql -u root -p sp_init < sql/init.sql
+   ```
 2. **缓存**：启动 Redis 服务。
 
 ### 2. 编译与运行
