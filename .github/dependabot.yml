@@ -3,13 +3,12 @@ updates:
   - package-ecosystem: "maven"
     directory: "/"
     schedule:
-      interval: "daily"     
-    open-pull-requests-limit: 10 
+      interval: "daily"
+    open-pull-requests-limit: 10
     commit-message:
       prefix: "build(deps)"
     labels:
       - "dependencies"
-    reviewers: []
     allow:
       - dependency-type: "all"
 
