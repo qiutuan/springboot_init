@@ -15,8 +15,7 @@ class AiChatControllerTest {
 
     @Test
     public void testChat() {
-
-        System.out.println(aiChatController.chat(new AiChatRequest("你好", "1")));
+        System.out.println(aiChatController.chatStream(new AiChatRequest("今天天气、推荐几个景点", "1")));
     }
 
 }

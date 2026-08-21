@@ -19,12 +19,18 @@ public class CorsConfig implements WebMvcConfigurer {
     @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000}")
     private List<String> allowedOrigins;
 
+    @Value("${spring.profiles.active:dev}")
+    private String activeProfile;
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        if (!"dev".equals(activeProfile) && allowedOrigins.contains("*")) {
+            throw new IllegalStateException("CORS security violation: '*' is not allowed in production environment.");
+        }
         registry.addMapping("/**")
                 // 允许携带 Cookie/凭证
                 .allowCredentials(true)
-                // 白名单域名（与 allowCredentials 兼容，不能使用 *）
+                // 白名单域名（与 allowCredentials 兼容）
                 .allowedOriginPatterns(allowedOrigins.toArray(new String[0]))
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")

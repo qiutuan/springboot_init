@@ -23,7 +23,7 @@ spring:
   # Spring AI Alibaba（DashScope / 通义千问），生产必须配置真实 DASHSCOPE_API_KEY
   ai:
     openai:
-      api-key: ${DASHSCOPE_API_KEY:sk-ws-H.EHXYPER.czSg.MEQCIDjb16KTH0cA3eWd_jAD8BGSFdVCCMB-qzUkI_kb7fHxAiB-bx6-epkiH3Ai2ydeP3FI1gE4JePJsLPJP63vIJ2Hrg}
+      api-key: ${DASHSCOPE_API_KEY:sk-ws-H.EYDMRYX.kd8F.MEUCIQCbAM7bpN8Oo_c1iZmPYJXoZH3BG0pEp7gT0kvc3SYuNgIgHOdNH-1wgDy1UhQ2S7v95nIt5m6kdqa-agBnvZOsxuY}
       chat:
         options:
           model: ${AI_CHAT_MODEL:qwen3.7-plus}
@@ -38,6 +38,8 @@ mybatis-plus:
   configuration:
     # 开启驼峰命名映射
     map-underscore-to-camel-case: true
+    # 默认不打印 SQL
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
   global-config:
     banner: false
     db-config:
@@ -50,7 +52,7 @@ mybatis-plus:
 sa-token:
   token-name: satoken
   timeout: 2592000          # token 有效期（秒），30 天
-  active-timeout: -1        # 最低活跃频率，-1 不检查
+  active-timeout: 1800      # 最低活跃频率（秒），30分钟无操作自动失效，配合自动续签
   is-concurrent: true       # 允许同一账号多地登录
   is-share: true            # 多人登录时共用一个 token
   token-style: uuid
@@ -58,18 +60,26 @@ sa-token:
   is-read-cookie: false     # 从 header 读取 token
   is-read-header: true
   is-write-header: true     # 登录后把 token 写入响应头
+  cookie:
+    http-only: true         # 开启 HttpOnly 抵御 XSS 窃取 Cookie 风险
+    secure: true            # 开启 Secure 确保只能在 HTTPS 传输
 
 # 应用自定义配置
 app:
   ai:
     # RAG 知识库目录（相对工作目录，启动时自动加载 .md/.txt）
     knowledge-path: ${AI_KNOWLEDGE_PATH:./data/knowledge}
+  cors:
+    # 生产跨域允许来源白名单，禁止使用 *
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
   rag:
     prompt-template: "Context information is below. Please answer the user's question based strictly on this context. Do not make up any information or use prior knowledge outside of the context. If the context does not contain the answer, reply honestly that you do not know or the knowledge base has no related content.\n---------------------\n{question_answer_context}\n---------------------\nUser's Question: {query}"
     empty-context-template: "抱歉，根据知识库内容，没有找到与“{query}”相关的信息。"
 
 # 接口文档配置
 knife4j:
+  enable: false
+  production: true
   openapi:
     title: "接口文档"
     version: 1.0
