@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * 请求日志切面（异步落库，避免阻塞业务线程）
@@ -32,6 +33,11 @@ import java.util.UUID;
 @Component
 @Slf4j
 public class RequestLogAspect {
+
+    /**
+     * 脱敏：JSON 中 password 类字段的值不落库，避免登录/注册口令泄露到请求日志表
+     */
+    private static final Pattern SENSITIVE_FIELD = Pattern.compile("(\"\\w*[Pp]assword\"\\s*:\\s*\")[^\"]*(\")");
 
     @Resource
     private RequestLogService requestLogService;
@@ -95,6 +101,7 @@ public class RequestLogAspect {
                             && !(arg instanceof HttpServletResponse)
                             && !(arg instanceof MultipartFile))
                     .toArray());
+            json = SENSITIVE_FIELD.matcher(json).replaceAll("$1***$2");
             return json.length() > 2000 ? json.substring(0, 2000) : json;
         } catch (Exception e) {
             log.warn("请求参数序列化失败", e);
