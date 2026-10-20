@@ -93,14 +93,15 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "角色不存在");
         }
         sysRolePermissionMapper.delete(new QueryWrapper<SysRolePermission>().eq("role_id", roleId));
-        for (Long pId : permissionIds) {
-            SysPermission permission = sysPermissionMapper.selectById(pId);
-            if (permission == null) {
-                throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "权限ID不存在: " + pId);
-            }
+        // 批量校验权限存在性，避免循环内逐次 DB 查询
+        List<SysPermission> permissions = sysPermissionMapper.selectBatchIds(permissionIds);
+        if (permissions.size() != permissionIds.stream().distinct().count()) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "存在无效的权限ID");
+        }
+        for (SysPermission permission : permissions) {
             SysRolePermission rp = new SysRolePermission();
             rp.setRoleId(roleId);
-            rp.setPermissionId(pId);
+            rp.setPermissionId(permission.getId());
             sysRolePermissionMapper.insert(rp);
         }
         return true;
