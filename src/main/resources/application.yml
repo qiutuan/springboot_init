@@ -20,10 +20,10 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
-  # Spring AI Alibaba（DashScope / 通义千问），生产必须配置真实 DASHSCOPE_API_KEY
+  # Spring AI（DashScope/OpenAI 兼容端点），生产必须通过环境变量注入真实密钥，不在仓库留存默认值
   ai:
     openai:
-      api-key: ${DASHSCOPE_API_KEY:sk-ws-H.EYDMRYX.kd8F.MEUCIQCbAM7bpN8Oo_c1iZmPYJXoZH3BG0pEp7gT0kvc3SYuNgIgHOdNH-1wgDy1UhQ2S7v95nIt5m6kdqa-agBnvZOsxuY}
+      api-key: ${DASHSCOPE_API_KEY:}
       chat:
         options:
           model: ${AI_CHAT_MODEL:qwen3.7-plus}
